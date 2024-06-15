@@ -84,7 +84,7 @@ class BlockIterator final : public Iterator {
 
   bool Valid() override;
 
- // private:
+ private:
   const char* data_{nullptr};
   BlockHandle handle_;
   size_t current_offset_;
