@@ -37,6 +37,7 @@ bool BlockBuilder::Append(ParsedKey key, Slice value) {
   // Update the current size and offset
   current_size_ += entry_size;
   offset_ += sizeof(offset_t) * 2 + key_size + value_size;
+  last_key_ = key;
 
   return true;
 }
@@ -58,10 +59,51 @@ void BlockBuilder::Finish() {
 void BlockIterator::Seek(Slice user_key, seq_t seq) {
   // DB_ERR("Not implemented!");
 
+  /*
   SeekToFirst();
   ParsedKey target_key(user_key, seq, RecordType::Value);
   while (Valid() && !(ParsedKey(current_key_) >= target_key)) {
     Next();
+  }
+  */
+
+  if (handle_.count_ == 0) {
+    current_key_ = Slice();
+    current_value_ = Slice();
+    return;
+  }
+
+  ParsedKey target_key(user_key, seq, RecordType::Value);
+
+  const char* offset_array_start = data_ + handle_.size_ - handle_.count_ * sizeof(offset_t);
+  const offset_t* offsets = reinterpret_cast<const offset_t*>(offset_array_start);
+
+  size_t left = 0;
+  size_t right = handle_.count_;
+  while (left < right) {
+    size_t mid = (left + right) / 2;
+    const char* key_ptr = data_ + offsets[mid];
+    offset_t key_length = *reinterpret_cast<const offset_t*>(key_ptr);
+    Slice mid_key(key_ptr + sizeof(offset_t), key_length);
+
+    ParsedKey mid_parsed_key(mid_key, 0, RecordType::Value);
+    if (mid_parsed_key < target_key) {
+      left = mid + 1;
+    } else {
+      right = mid;
+    }
+  }
+
+  index_ = left;
+  if (index_ < handle_.count_) {
+    current_offset_ = offsets[index_];
+    offset_t key_length = *reinterpret_cast<const offset_t*>(data_ + current_offset_);
+    current_key_ = Slice(data_ + current_offset_ + sizeof(offset_t), key_length);
+    offset_t value_length = *reinterpret_cast<const offset_t*>(data_ + current_offset_ + sizeof(offset_t) + key_length);
+    current_value_ = Slice(data_ + current_offset_ + sizeof(offset_t) * 2 + key_length, value_length);
+  } else {
+    current_key_ = Slice();
+    current_value_ = Slice();
   }
 }
 
@@ -73,9 +115,8 @@ void BlockIterator::SeekToFirst() {
   if (handle_.count_ > 0) {
     offset_t key_length = *reinterpret_cast<const offset_t*>(data_);
     current_key_ = Slice(data_ + sizeof(offset_t), key_length);
-    offset_t value_length = *reinterpret_cast<const offset_t*>(data_ + sizeof(offset_t) + current_key_.size());
-    current_value_ = Slice(data_ + sizeof(offset_t) * 2 + current_key_.size(), value_length);
-    std::cout << current_key_ << std::endl;
+    offset_t value_length = *reinterpret_cast<const offset_t*>(data_ + sizeof(offset_t) + key_length);
+    current_value_ = Slice(data_ + sizeof(offset_t) * 2 + key_length, value_length);
   } else {
     current_key_ = Slice();
     current_value_ = Slice();

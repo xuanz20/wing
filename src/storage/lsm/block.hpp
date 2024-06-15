@@ -41,6 +41,8 @@ class BlockBuilder {
     offsets_.clear();
   }
 
+  ParsedKey GetLastKey() { return last_key_; };
+
  private:
   /* The maximum size of a block */
   size_t block_size_{0};
@@ -50,6 +52,8 @@ class BlockBuilder {
   offset_t offset_{0};
   /* The writer. */
   FileWriter* file_{nullptr};
+  /* The last key of a block */
+  ParsedKey last_key_{ParsedKey()};
 
   /* The offsets of the records in the block. */
   std::vector<offset_t> offsets_;
@@ -84,7 +88,7 @@ class BlockIterator final : public Iterator {
 
   bool Valid() override;
 
- private:
+ // private:
   const char* data_{nullptr};
   BlockHandle handle_;
   size_t current_offset_;
