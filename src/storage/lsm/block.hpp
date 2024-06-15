@@ -60,8 +60,14 @@ class BlockIterator final : public Iterator {
   BlockIterator() = default;
 
   /* data is a pointer to the beginning of the block. */
-  BlockIterator(const char* data, BlockHandle handle) : data_(data) {
-    DB_ERR("Not implemented!");
+  BlockIterator(const char* data, BlockHandle handle) : 
+    data_(data), 
+    handle_(handle), 
+    current_offset_(0), 
+    index_(0),
+    current_key_(Slice()),
+    current_value_(Slice()) {
+    // DB_ERR("Not implemented!");
   }
 
   /* Move the the beginning */
@@ -78,8 +84,13 @@ class BlockIterator final : public Iterator {
 
   bool Valid() override;
 
- private:
+ // private:
   const char* data_{nullptr};
+  BlockHandle handle_;
+  size_t current_offset_;
+  offset_t index_;
+  Slice current_key_;
+  Slice current_value_;
 };
 
 }  // namespace lsm
