@@ -56,17 +56,20 @@ void BlockBuilder::Finish() {
   }
 }
 
+/* Find key0 == user_key && largest seq0 <= seq */
+/* If not found, return the sentinel (invalid) */
 void BlockIterator::Seek(Slice user_key, seq_t seq) {
   // DB_ERR("Not implemented!");
 
-  /*
-  SeekToFirst();
+  // linear search
   ParsedKey target_key(user_key, seq, RecordType::Value);
+  SeekToFirst();
   while (Valid() && !(ParsedKey(current_key_) >= target_key)) {
     Next();
   }
-  */
 
+
+  /*
   if (handle_.count_ == 0) {
     current_key_ = Slice();
     current_value_ = Slice();
@@ -105,6 +108,7 @@ void BlockIterator::Seek(Slice user_key, seq_t seq) {
     current_key_ = Slice();
     current_value_ = Slice();
   }
+  */
 }
 
 void BlockIterator::SeekToFirst() {

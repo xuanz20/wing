@@ -48,6 +48,7 @@ SSTable::~SSTable() {
   }
 }
 
+// find key0 == key && seq0 <= seq
 GetResult SSTable::Get(Slice key, uint64_t seq, std::string* value) {
   if (!utils::BloomFilter::Find(key, bloom_filter_)) {
     return GetResult::kNotFound;
@@ -60,9 +61,9 @@ GetResult SSTable::Get(Slice key, uint64_t seq, std::string* value) {
     AlignedBuffer buffer(block_handle.size_, 4096);
     file_->Read(buffer.data(), block_handle.size_, block_handle.offset_);
     BlockIterator it(buffer.data(), block_handle);
-    it.Seek(key, seq);
-    if (it.Valid() && ParsedKey(it.key()).user_key_ == key) {
-      if (ParsedKey(it.key()).seq_ > seq) return GetResult::kNotFound;
+    it.Seek(key, seq); // Find key0 == key && largest seq0 <= seq
+    if (it.Valid() && ParsedKey(it.key()).user_key_ == key) { // 
+      // if (ParsedKey(it.key()).seq_ > seq) return GetResult::kNotFound;
       if (ParsedKey(it.key()).type_ == RecordType::Value) {
         *value = std::string(it.value());
         return GetResult::kFound;
@@ -144,7 +145,7 @@ void SSTableBuilder::Finish() {
 
   bloom_filter_offset_ = current_block_offset_;
   std::string bloom_bits;
-  utils::BloomFilter::Create(count_, bloom_bits_per_key_, bloom_bits);
+  utils::BloomFilter::Create(key_hashes_.size(), bloom_bits_per_key_, bloom_bits);
   for (const auto& hash : key_hashes_) {
     utils::BloomFilter::Add(hash, bloom_bits);
   }

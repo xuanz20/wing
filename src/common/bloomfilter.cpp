@@ -2,6 +2,8 @@
 
 #include "common/serializer.hpp"
 
+#include <iostream>
+
 namespace wing {
 
 namespace utils {
