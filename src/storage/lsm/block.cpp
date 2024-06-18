@@ -62,19 +62,19 @@ void BlockIterator::Seek(Slice user_key, seq_t seq) {
   // DB_ERR("Not implemented!");
 
   // linear search
+  /*
   ParsedKey target_key(user_key, seq, RecordType::Value);
   SeekToFirst();
   while (Valid() && !(ParsedKey(current_key_) >= target_key)) {
     Next();
   }
 
-
-  /*
   if (handle_.count_ == 0) {
     current_key_ = Slice();
     current_value_ = Slice();
     return;
   }
+  */
 
   ParsedKey target_key(user_key, seq, RecordType::Value);
 
@@ -88,8 +88,9 @@ void BlockIterator::Seek(Slice user_key, seq_t seq) {
     const char* key_ptr = data_ + offsets[mid];
     offset_t key_length = *reinterpret_cast<const offset_t*>(key_ptr);
     Slice mid_key(key_ptr + sizeof(offset_t), key_length);
+    // seq_t mid_seq = *reinterpret_cast<const seq_t*>(key_ptr + sizeof(offset_t) + key_length);
 
-    ParsedKey mid_parsed_key(mid_key, 0, RecordType::Value);
+    ParsedKey mid_parsed_key(mid_key);
     if (mid_parsed_key < target_key) {
       left = mid + 1;
     } else {
@@ -108,7 +109,6 @@ void BlockIterator::Seek(Slice user_key, seq_t seq) {
     current_key_ = Slice();
     current_value_ = Slice();
   }
-  */
 }
 
 void BlockIterator::SeekToFirst() {

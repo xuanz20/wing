@@ -72,7 +72,19 @@ class SuperVersion {
 
 class SuperVersionIterator final : public Iterator {
  public:
-  SuperVersionIterator(SuperVersion* sv) : sv_(sv) {}
+  SuperVersionIterator(SuperVersion* sv) : sv_(sv) {
+    mt_its_.push_back(sv_->mt_.get());
+
+    for (auto& i : *sv_->imms_) {
+      mt_its_.push_back(i.get());
+    }
+
+    for (auto& l : sv_->version_->GetLevels()) {
+      for (auto& r : l.GetRuns()) {
+        sst_its_.push_back(r.get());
+      }
+    }
+  }
 
   /* Move the the beginning */
   void SeekToFirst();

@@ -5,7 +5,14 @@ namespace wing {
 namespace lsm {
 
 bool Version::Get(std::string_view user_key, seq_t seq, std::string* value) {
-  DB_ERR("Not implemented!");
+  for (int i = 0; i < levels_.size(); ++i) {
+    auto res = levels_[i].Get(user_key, seq, value);
+    if (res != GetResult::kNotFound) {
+      if (res == GetResult::kFound) return true;
+      return false;
+    }
+  }
+  return false;
 }
 
 void Version::Append(
@@ -24,7 +31,37 @@ void Version::Append(uint32_t level_id, std::shared_ptr<SortedRun> sorted_run) {
 
 bool SuperVersion::Get(
     std::string_view user_key, seq_t seq, std::string* value) {
-  DB_ERR("Not implemented!");
+  // DB_ERR("Not implemented!");
+  auto res = mt_->Get(user_key, seq, value);
+  if (res == GetResult::kFound) return true;
+  if (res == GetResult::kDelete) return false;
+
+  for (int i = imms_->size() - 1; i >= 0; --i) {
+    auto res = (*imms_)[i]->Get(user_key, seq, value);
+    if (res == GetResult::kFound) return true;
+    if (res == GetResult::kDelete) return false;
+  }
+
+  /*
+  size_t left = imms_->size(), right = 0;
+  while (left > right) {
+    size_t mid = (left + right) / 2;
+    auto res = (*imms_)[mid]->GetTable().upper_bound(user_key);
+    if (res == (*imms_)[mid]->GetTable().end()) right = mid + 1;
+    else left = mid;
+    // auto res = (*imms_)[mid]->Get(user_key, seq, value);
+    // if (res == GetResult::kNotFound) right = mid + 1;
+    // else left = mid;
+
+  }
+
+  if (left < imms_->size()) {
+    auto res = (*imms_)[left]->Get(user_key, seq, value);
+    if (res == GetResult::kFound) return true;
+    if (res == GetResult::kDelete) return false;
+  }
+  */
+  return version_->Get(user_key, seq, value);
 }
 
 std::string SuperVersion::ToString() const {
@@ -43,19 +80,52 @@ std::string SuperVersion::ToString() const {
   return ret;
 }
 
-void SuperVersionIterator::SeekToFirst() { DB_ERR("Not implemented!"); }
-
-void SuperVersionIterator::Seek(Slice key, seq_t seq) {
-  DB_ERR("Not implemented!");
+void SuperVersionIterator::SeekToFirst() { 
+  // DB_ERR("Not implemented!"); 
+  it_ = IteratorHeap<Iterator>();
+  for (int i = 0; i < mt_its_.size(); ++i) {
+    mt_its_[i].SeekToFirst();
+    it_.Push(&mt_its_[i]);
+  }
+  for (int i = 0; i < sst_its_.size(); ++i) {
+    sst_its_[i].SeekToFirst();
+    it_.Push(&sst_its_[i]);
+  }
 }
 
-bool SuperVersionIterator::Valid() { DB_ERR("Not implemented!"); }
+void SuperVersionIterator::Seek(Slice key, seq_t seq) {
+  // DB_ERR("Not implemented!");
+  it_ = IteratorHeap<Iterator>();
+  // SeekToFirst();
+  for (int i = 0; i < mt_its_.size(); ++i) {
+    mt_its_[i].Seek(key, seq);
+    if (mt_its_[i].Valid()) it_.Push(&mt_its_[i]);
+  }
+  for (int i = 0; i < sst_its_.size(); ++i) {
+    sst_its_[i].Seek(key, seq);
+    if (sst_its_[i].Valid()) it_.Push(&sst_its_[i]);
+  }
+}
 
-Slice SuperVersionIterator::key() const { DB_ERR("Not implemented!"); }
+bool SuperVersionIterator::Valid() { 
+  // DB_ERR("Not implemented!"); 
+  return it_.Valid();
+}
 
-Slice SuperVersionIterator::value() const { DB_ERR("Not implemented!"); }
+Slice SuperVersionIterator::key() const { 
+  // DB_ERR("Not implemented!"); 
+  return it_.key();
+}
 
-void SuperVersionIterator::Next() { DB_ERR("Not implemented!"); }
+Slice SuperVersionIterator::value() const { 
+  // DB_ERR("Not implemented!"); 
+  return it_.value();
+}
+
+void SuperVersionIterator::Next() { 
+  // DB_ERR("Not implemented!"); }
+  return it_.Next();
+}
 
 }  // namespace lsm
 

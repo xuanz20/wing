@@ -96,6 +96,7 @@ class SSTableIterator final : public Iterator {
   void SeekToFirst();
 
   /* Find the first record >= (user_key, seq) */
+  /* Find key0 == user_key && largest seq0 <= seq */
   void Seek(Slice key, uint64_t seq);
 
   bool Valid() override;

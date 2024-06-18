@@ -99,6 +99,13 @@ class SortedRunIterator final : public Iterator {
   SortedRunIterator(SortedRun* run, SSTableIterator sst_it, int sst_id)
     : run_(run), sst_it_(std::move(sst_it)), sst_id_(sst_id) {}
 
+  SortedRunIterator(SortedRun* run)
+    : run_(run), sst_it_(std::move(SSTableIterator((run_->ssts_)[0].get()))), sst_id_(0) {}
+
+  /* Find the first record >= (user_key, seq) */
+  /* Find key0 == user_key && largest seq0 <= seq */
+  void Seek(Slice key, uint64_t seq);
+
   void SeekToFirst();
 
   bool Valid() override;

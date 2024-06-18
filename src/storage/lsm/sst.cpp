@@ -53,6 +53,19 @@ GetResult SSTable::Get(Slice key, uint64_t seq, std::string* value) {
   if (!utils::BloomFilter::Find(key, bloom_filter_)) {
     return GetResult::kNotFound;
   }
+
+  SSTableIterator it = Seek(key, seq);
+  if (it.Valid() && ParsedKey(it.key()).user_key_ == key) {
+    if (ParsedKey(it.key()).type_ == RecordType::Value) {
+      *value = std::string(it.value());
+      return GetResult::kFound;
+    } else {
+      return GetResult::kDelete;
+    }
+  }
+  return GetResult::kNotFound;
+
+  /*
   for (const auto& index_value : index_) {
     if (index_value.key_.user_key() < key) {
       continue;
@@ -62,8 +75,7 @@ GetResult SSTable::Get(Slice key, uint64_t seq, std::string* value) {
     file_->Read(buffer.data(), block_handle.size_, block_handle.offset_);
     BlockIterator it(buffer.data(), block_handle);
     it.Seek(key, seq); // Find key0 == key && largest seq0 <= seq
-    if (it.Valid() && ParsedKey(it.key()).user_key_ == key) { // 
-      // if (ParsedKey(it.key()).seq_ > seq) return GetResult::kNotFound;
+    if (it.Valid() && ParsedKey(it.key()).user_key_ == key) {
       if (ParsedKey(it.key()).type_ == RecordType::Value) {
         *value = std::string(it.value());
         return GetResult::kFound;
@@ -73,27 +85,116 @@ GetResult SSTable::Get(Slice key, uint64_t seq, std::string* value) {
     }
   }
   return GetResult::kNotFound;
+  */
 }
 
 SSTableIterator SSTable::Seek(Slice key, uint64_t seq) {
-  DB_ERR("Not implemented!");
+  // DB_ERR("Not implemented!");
+  SSTableIterator it = Begin();
+  it.Seek(key, seq);
+  return it;
 }
 
-SSTableIterator SSTable::Begin() { DB_ERR("Not implemented!"); }
+SSTableIterator SSTable::Begin() { 
+  // DB_ERR("Not implemented!");
+  SSTableIterator it(this);
+  it.SeekToFirst();
+  return it;
+}
 
 void SSTableIterator::Seek(Slice key, uint64_t seq) {
-  DB_ERR("Not implemented!");
+  // DB_ERR("Not implemented!");
+
+  /*
+  for (block_id_ = 0; block_id_ < sst_->index_.size(); ++block_id_) {
+    IndexValue block_index = sst_->index_[block_id_];
+    InternalKey block_key = block_index.key_;
+    if (
+      block_key.user_key() < key ||
+      (block_key.user_key() == key && block_key.seq() > seq)
+    ) {
+      continue;
+    }
+    const auto& block_handle = sst_->index_[block_id_].block_;
+    // AlignedBuffer buffer(block_handle.size_, 4096);
+    buf_ = AlignedBuffer(block_handle.size_, 4096);
+    sst_->file_->Read(buf_.data(), block_handle.size_, block_handle.offset_);
+    block_it_ = BlockIterator(buf_.data(), block_handle);
+    block_it_.Seek(key, seq);
+    return;
+  }
+  */
+
+  ParsedKey target_key(key, seq, RecordType::Value);
+  size_t left = 0;
+  size_t right = sst_->index_.size();
+  while (left < right) {
+    size_t mid = (left + right) / 2;
+    ParsedKey mid_parsed_key = sst_->index_[mid].key_;
+    if (mid_parsed_key < target_key) left = mid + 1;
+    else right = mid;
+  }
+
+  block_id_ = left;
+  if (block_id_ < sst_->index_.size()) {
+    const auto& block_handle = sst_->index_[block_id_].block_;
+    // AlignedBuffer buffer(block_handle.size_, 4096);
+    buf_ = AlignedBuffer(block_handle.size_, 4096);
+    sst_->file_->Read(buf_.data(), block_handle.size_, block_handle.offset_);
+    block_it_ = BlockIterator(buf_.data(), block_handle);
+    block_it_.Seek(key, seq);
+  }
+  return;
 }
 
-void SSTableIterator::SeekToFirst() { DB_ERR("Not implemented!"); }
+void SSTableIterator::SeekToFirst() {
+  // DB_ERR("Not implemented!");
 
-bool SSTableIterator::Valid() { DB_ERR("Not implemented!"); }
+  block_id_ = 0;
+  if (sst_->index_.size() == 0) {
+    block_it_ = BlockIterator();
+    buf_ = AlignedBuffer();
+    return;
+  }
+  const auto& block_handle = sst_->index_[block_id_].block_;
+  buf_ = AlignedBuffer(block_handle.size_, 4096);
+  sst_->file_->Read(buf_.data(), block_handle.size_, block_handle.offset_);
+  block_it_ = BlockIterator(buf_.data(), block_handle);
+  block_it_.SeekToFirst();
+}
 
-Slice SSTableIterator::key() const { DB_ERR("Not implemented!"); }
+bool SSTableIterator::Valid() { // TODO
+  // DB_ERR("Not implemented!");
+  
+  return block_it_.Valid();
+}
 
-Slice SSTableIterator::value() const { DB_ERR("Not implemented!"); }
+Slice SSTableIterator::key() const {
+  // DB_ERR("Not implemented!");
 
-void SSTableIterator::Next() { DB_ERR("Not implemented!"); }
+  return block_it_.key();
+}
+
+Slice SSTableIterator::value() const {
+  // DB_ERR("Not implemented!");
+  
+  return block_it_.value();
+}
+
+void SSTableIterator::Next() {
+  // DB_ERR("Not implemented!");
+
+  block_it_.Next();
+  if (!block_it_.Valid() && block_id_ < sst_->index_.size() - 1) {
+    // move to next block
+    ++block_id_;
+    const auto& block_handle = sst_->index_[block_id_].block_;
+    buf_ = AlignedBuffer(block_handle.size_, 4096);
+    sst_->file_->Read(buf_.data(), block_handle.size_, block_handle.offset_);
+    block_it_ = BlockIterator(buf_.data(), block_handle);
+    block_it_.SeekToFirst();
+  }
+}
 
 void SSTableBuilder::Append(ParsedKey key, Slice value) {
   // DB_ERR("Not implemented!");
