@@ -16,7 +16,6 @@ namespace lsm {
 
 SSTable::SSTable(SSTInfo sst_info, size_t block_size, bool use_direct_io)
   : sst_info_(std::move(sst_info)), block_size_(block_size) {
-  // DB_ERR("Not implemented!");
   file_ = std::make_unique<ReadFile>(sst_info_.filename_, use_direct_io);
 
   FileReader reader_(file_.get(), 1 << 30, 0);
@@ -89,22 +88,18 @@ GetResult SSTable::Get(Slice key, uint64_t seq, std::string* value) {
 }
 
 SSTableIterator SSTable::Seek(Slice key, uint64_t seq) {
-  // DB_ERR("Not implemented!");
   SSTableIterator it = Begin();
   it.Seek(key, seq);
   return it;
 }
 
 SSTableIterator SSTable::Begin() { 
-  // DB_ERR("Not implemented!");
   SSTableIterator it(this);
   it.SeekToFirst();
   return it;
 }
 
 void SSTableIterator::Seek(Slice key, uint64_t seq) {
-  // DB_ERR("Not implemented!");
-
   /*
   for (block_id_ = 0; block_id_ < sst_->index_.size(); ++block_id_) {
     IndexValue block_index = sst_->index_[block_id_];
@@ -148,8 +143,6 @@ void SSTableIterator::Seek(Slice key, uint64_t seq) {
 }
 
 void SSTableIterator::SeekToFirst() {
-  // DB_ERR("Not implemented!");
-
   block_id_ = 0;
   if (sst_->index_.size() == 0) {
     block_it_ = BlockIterator();
@@ -164,26 +157,18 @@ void SSTableIterator::SeekToFirst() {
 }
 
 bool SSTableIterator::Valid() { // TODO
-  // DB_ERR("Not implemented!");
-  
   return block_it_.Valid();
 }
 
 Slice SSTableIterator::key() const {
-  // DB_ERR("Not implemented!");
-
   return block_it_.key();
 }
 
 Slice SSTableIterator::value() const {
-  // DB_ERR("Not implemented!");
-  
   return block_it_.value();
 }
 
 void SSTableIterator::Next() {
-  // DB_ERR("Not implemented!");
-
   block_it_.Next();
   if (!block_it_.Valid() && block_id_ < sst_->index_.size() - 1) {
     // move to next block
@@ -197,8 +182,6 @@ void SSTableIterator::Next() {
 }
 
 void SSTableBuilder::Append(ParsedKey key, Slice value) {
-  // DB_ERR("Not implemented!");
-
   if (!block_builder_.Append(key, value)) {
     block_builder_.Finish();
     IndexValue index_value;
@@ -212,18 +195,16 @@ void SSTableBuilder::Append(ParsedKey key, Slice value) {
 
   size_t key_hash = utils::BloomFilter::BloomHash(key.user_key_);
   key_hashes_.push_back(key_hash);
-  if (smallest_key_.size() == 0 || key < smallest_key_) {
+  if (smallest_key_.user_key().size() == 0 || key < smallest_key_) {
     smallest_key_ = key;
   }
-  if (largest_key_.size() == 0 || key > largest_key_) {
+  if (largest_key_.user_key().size() == 0 || key > largest_key_) {
     largest_key_ = key;
   }
   ++count_;
 }
 
 void SSTableBuilder::Finish() { 
-  // DB_ERR("Not implemented!"); 
-
   block_builder_.Finish();
   IndexValue index_value;
   index_value.key_ = block_builder_.GetLastKey();

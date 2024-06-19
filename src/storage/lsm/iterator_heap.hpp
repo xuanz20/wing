@@ -4,6 +4,7 @@
 
 #include "storage/lsm/format.hpp"
 #include "storage/lsm/iterator.hpp"
+#include "storage/lsm/sst.hpp"
 
 namespace wing {
 
@@ -56,6 +57,13 @@ class IteratorHeap final : public Iterator {
   };
   std::priority_queue<T*, std::vector<T*>, cmp> heap_;
 };
+
+// make sure the SSTable iterator is valid
+template <>
+inline void IteratorHeap<SSTableIterator>::Push(SSTableIterator* it) {
+   it->SeekToFirst();
+   heap_.push(it);
+}
 
 }  // namespace lsm
 

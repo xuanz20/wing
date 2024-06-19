@@ -31,7 +31,6 @@ void Version::Append(uint32_t level_id, std::shared_ptr<SortedRun> sorted_run) {
 
 bool SuperVersion::Get(
     std::string_view user_key, seq_t seq, std::string* value) {
-  // DB_ERR("Not implemented!");
   auto res = mt_->Get(user_key, seq, value);
   if (res == GetResult::kFound) return true;
   if (res == GetResult::kDelete) return false;
@@ -81,7 +80,6 @@ std::string SuperVersion::ToString() const {
 }
 
 void SuperVersionIterator::SeekToFirst() { 
-  // DB_ERR("Not implemented!"); 
   it_ = IteratorHeap<Iterator>();
   for (int i = 0; i < mt_its_.size(); ++i) {
     mt_its_[i].SeekToFirst();
@@ -94,7 +92,6 @@ void SuperVersionIterator::SeekToFirst() {
 }
 
 void SuperVersionIterator::Seek(Slice key, seq_t seq) {
-  // DB_ERR("Not implemented!");
   it_ = IteratorHeap<Iterator>();
   // SeekToFirst();
   for (int i = 0; i < mt_its_.size(); ++i) {
@@ -108,22 +105,18 @@ void SuperVersionIterator::Seek(Slice key, seq_t seq) {
 }
 
 bool SuperVersionIterator::Valid() { 
-  // DB_ERR("Not implemented!"); 
   return it_.Valid();
 }
 
 Slice SuperVersionIterator::key() const { 
-  // DB_ERR("Not implemented!"); 
   return it_.key();
 }
 
 Slice SuperVersionIterator::value() const { 
-  // DB_ERR("Not implemented!"); 
   return it_.value();
 }
 
 void SuperVersionIterator::Next() { 
-  // DB_ERR("Not implemented!"); }
   return it_.Next();
 }
 

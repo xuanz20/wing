@@ -6,8 +6,6 @@ namespace wing {
 namespace lsm {
 
 bool BlockBuilder::Append(ParsedKey key, Slice value) {
-  // DB_ERR("Not implemented!");
-
   // Calculate the size needed to store the key and value
   size_t key_size = key.size();
   size_t value_size = value.size();
@@ -43,8 +41,6 @@ bool BlockBuilder::Append(ParsedKey key, Slice value) {
 }
 
 void BlockBuilder::Finish() { 
-  // DB_ERR("Not implemented!");
-
   // If there are no offsets, there is nothing to finish
   if (offsets_.empty()) {
     return;
@@ -59,8 +55,6 @@ void BlockBuilder::Finish() {
 /* Find key0 == user_key && largest seq0 <= seq */
 /* If not found, return the sentinel (invalid) */
 void BlockIterator::Seek(Slice user_key, seq_t seq) {
-  // DB_ERR("Not implemented!");
-
   // linear search
   /*
   ParsedKey target_key(user_key, seq, RecordType::Value);
@@ -112,8 +106,6 @@ void BlockIterator::Seek(Slice user_key, seq_t seq) {
 }
 
 void BlockIterator::SeekToFirst() {
-  // DB_ERR("Not implemented!");
-
   current_offset_ = 0;
   index_ = 0;
   if (handle_.count_ > 0) {
@@ -128,20 +120,14 @@ void BlockIterator::SeekToFirst() {
 }
 
 Slice BlockIterator::key() const {
-  // DB_ERR("Not implemented!");
-
   return current_key_;
 }
 
 Slice BlockIterator::value() const {
-  // DB_ERR("Not implemented!");
-
   return current_value_;
 }
 
 void BlockIterator::Next() {
-  // DB_ERR("Not implemented!");
-
   if (!Valid()) return;
   index_ ++;
   current_offset_ += sizeof(offset_t) * 2 + current_key_.size() + current_value_.size();
@@ -157,8 +143,6 @@ void BlockIterator::Next() {
 }
 
 bool BlockIterator::Valid() { 
-  // DB_ERR("Not implemented!");
-  
   return handle_.count_ > 0 && index_ < handle_.count_;
 }
 

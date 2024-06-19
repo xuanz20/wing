@@ -127,6 +127,7 @@ class SSTableBuilder {
       bloom_bits_per_key_(bloom_bits_per_key) {}
 
   ~SSTableBuilder() = default;
+  SSTableBuilder& operator=(SSTableBuilder&&) = default;
 
   void Append(ParsedKey key, Slice value);
 

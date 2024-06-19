@@ -7,8 +7,6 @@ namespace wing {
 namespace lsm {
 
 GetResult SortedRun::Get(Slice key, uint64_t seq, std::string* value) {
-  // DB_ERR("Not implemented!");
-
   ParsedKey target_key(key, seq, RecordType::Value);
 
   /*
@@ -54,8 +52,6 @@ SortedRunIterator SortedRun::Seek(Slice key, uint64_t seq) {
 }
 
 SortedRunIterator SortedRun::Begin() { 
-  // DB_ERR("Not implemented!");
-  
   SortedRunIterator it(this, SSTableIterator(), 0);
   it.SeekToFirst();
   return it;
