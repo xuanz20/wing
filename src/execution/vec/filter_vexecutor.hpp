@@ -34,7 +34,7 @@ class FilterVecExecutor : public VecExecutor {
   }
 
  private:
-  ExprVecExecutor pred_;
+  ExprVecfoExecutor pred_;
   Vector pred_result_;
   std::unique_ptr<VecExecutor> ch_;
 };

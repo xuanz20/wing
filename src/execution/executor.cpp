@@ -7,6 +7,7 @@
 #include "execution/vec/project_vexecutor.hpp"
 #include "execution/vec/pt_vexecutor.hpp"
 #include "execution/vec/seqscan_vexecutor.hpp"
+#include "execution/vec/join_vexecutor.hpp"
 #include "execution/volcano/delete_executor.hpp"
 #include "execution/volcano/filter_executor.hpp"
 #include "execution/volcano/insert_executor.hpp"
@@ -50,7 +51,18 @@ std::unique_ptr<VecExecutor> ExecutorGenerator::GenerateVec(
         print_plan->num_fields_per_tuple_);
   }
 
-  throw DBException("Unsupported plan node.");
+  else if (plan->type_ == PlanType::Join) {
+    auto join_plan = static_cast<const JoinPlanNode*>(plan);
+    return std::make_unique<JoinVecExecutor>(
+      db.GetOptions().exec_options,
+      GenerateVec(join_plan->ch_.get(), db, txn_id),
+      GenerateVec(join_plan->ch2_.get(), db, txn_id),
+      join_plan->ch_->output_schema_,
+      join_plan->predicate_
+    );
+  }
+
+  // throw DBException("Unsupported plan node.");
 }
 
 std::unique_ptr<Executor> ExecutorGenerator::Generate(
